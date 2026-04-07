@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:atv_cadastro/confirmacao.dart';
 
 void main() {
   runApp(const MyApp());
@@ -50,7 +51,30 @@ class FormCadastro extends StatefulWidget {
 
 class _FormCadastroState extends State<FormCadastro> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nomeController = TextEditingController();
+  final TextEditingController _idadeController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+
+  bool aceitouTermos = false;
   String? generoSelecionado;
+
+  _trocarTela() {
+    if (_formKey.currentState!.validate()) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Confirmacao(
+            title: 'Confirmação',
+            nome: _nomeController.text,
+            idade: int.parse(_idadeController.text),
+            email: _emailController.text,
+            genero: generoSelecionado!,
+            aceitouTermos: aceitouTermos,
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,20 +96,22 @@ class _FormCadastroState extends State<FormCadastro> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
+
                 TextFormField(
+                  controller: _nomeController,
                   decoration: const InputDecoration(
                     labelText: 'Nome',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Campo "nome" não pode ser vazio.';
-                    }
-                    return null;
-                  },
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Campo "nome" não pode ser vazio.'
+                      : null,
                 ),
+
                 const SizedBox(height: 16),
+
                 TextFormField(
+                  controller: _idadeController,
                   decoration: const InputDecoration(
                     labelText: 'Idade',
                     border: OutlineInputBorder(),
@@ -95,18 +121,18 @@ class _FormCadastroState extends State<FormCadastro> {
                     if (value == null || value.isEmpty) {
                       return 'Informe sua idade';
                     }
-
                     final idade = int.tryParse(value);
-
                     if (idade == null || idade < 18) {
-                      return 'Idade deve ser um número ≥ 18';
+                      return 'Você deve ter 18 para prosseguir';
                     }
-
                     return null;
                   },
                 ),
+
                 const SizedBox(height: 16),
+
                 TextFormField(
+                  controller: _emailController,
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     border: OutlineInputBorder(),
@@ -116,11 +142,9 @@ class _FormCadastroState extends State<FormCadastro> {
                     if (value == null || value.isEmpty) {
                       return 'Campo "email" não pode ser vazio.';
                     }
-
                     if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
                       return 'Insira um email válido';
                     }
-
                     return null;
                   },
                 ),
@@ -145,39 +169,25 @@ class _FormCadastroState extends State<FormCadastro> {
                       generoSelecionado = valor;
                     });
                   },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Selecione um gênero.';
-                    }
-                    return null;
-                  },
+                  validator: (value) =>
+                      value == null ? 'Selecione um gênero.' : null,
                 ),
 
                 const SizedBox(height: 16),
-                FormCheckbox(),
+
+                FormCheckbox(
+                  onChanged: (value) {
+                    aceitouTermos = value ?? false;
+                  },
+                ),
+
                 const SizedBox(height: 20),
+
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text(
-                            'Cadastro realizado com sucesso!',
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: _trocarTela,
                   child: const Text('Cadastrar'),
                 ),
               ],
@@ -190,7 +200,7 @@ class _FormCadastroState extends State<FormCadastro> {
 }
 
 class FormCheckbox extends FormField<bool> {
-  FormCheckbox({super.key})
+  FormCheckbox({super.key, required Function(bool?) onChanged})
     : super(
         initialValue: false,
         validator: (value) {
@@ -208,6 +218,7 @@ class FormCheckbox extends FormField<bool> {
                 value: state.value,
                 onChanged: (value) {
                   state.didChange(value);
+                  onChanged(value);
                 },
                 controlAffinity: ListTileControlAffinity.leading,
               ),
